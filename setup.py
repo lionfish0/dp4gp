@@ -7,7 +7,7 @@ setup(
   author = 'Mike Smith',
   author_email = 'm.t.smith@sheffield.ac.uk',
   url = 'https://github.com/lionfish0/dp4gp.git', # use the URL to the github repo
-  download_url = 'https://github.com/lionfish0/dp4gp/archive/0.1.tar.gz', # I'll explain this in a second
+  download_url = 'https://github.com/lionfish0/dp4gp/archive/0.9.tar.gz', # I'll explain this in a second
   keywords = ['differential privacy','gaussian processes'], # arbitrary keywords
   classifiers = [],
 )
