@@ -163,7 +163,7 @@ def load_pricepaid(since=0):
         if not os.path.isfile(filename):        
             os.system('wget http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/'+filename)
         pp = pd.read_csv(filename,header=None,usecols=[1,2,3,4],names=["price", "date", "postcode", "type"])
-        pp = pp.ix[random.sample(pp.index, 300000)]
+        pp = pp.ix[random.sample(pp.index.values.tolist(), 300000)]
         pp.to_csv('sampled_pp.csv')
     else:
         print("Using presampled dataset.")
