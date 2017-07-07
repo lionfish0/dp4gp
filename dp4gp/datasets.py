@@ -8,7 +8,7 @@ import pandas as pd
 import re
 import xml.etree.ElementTree as ET
 import sqlite3 as lite
-import urllib
+import urllib.request
 from urllib.request import urlopen
 import zipfile,os.path,os
 import sqlalchemy as sa
@@ -20,6 +20,8 @@ import shutil
 import time
 from datetime import datetime
 import random
+
+##TODO Need to move this to a new package so I have fewer dependencies on dp4gp
 
 def adjustpostcode(postcode):
     """Formats postcode into 7 character format, so "a1 2cd" becomes "A1  2CD" or "Gl54 1AB" becomes "GL541AB"."""
@@ -223,7 +225,8 @@ def add_ons_column(df,dataset):
     
 def setup_postcodes(pathToData):
     """Creates databases and files, downloads data, and populates the datafiles"""       
-    url = "https://ago-item-storage.s3-external-1.amazonaws.com/a26683d2393743f4b87c89141cd1b2e8/NSPL_FEB_2017_UK.zip?X-Amz-Security-Token=FQoDYXdzEOz%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDNnej9L6SZy5Qb3j8iKcA8DP4euIlUueTPtPplc0%2Ft2xEqK558PzosoBZG03VDr5kDJSTHYfvxXUTsaQM3KHYrAJjd7QMzPuzPRV6Vin%2FP6W5ZMa%2FKFmOQ7i33WJF4i9l17HSrq4PzMmfAENbBXVyBvBVSIgSdbZ61RLsunOz1Z%2Fz1%2FLtVFikM20J1ZUsyOeNCuDsgJMqH3KmIiwnfqSJdb%2FqyE2w3%2FBDlw8%2Fn1tGmP01bzL%2BPRk%2BXrNVbCi1Qzv%2F8QqJTjTrLGn3qWNXg48lt86RObkOtpfr9JY26D%2FpvrFZS6%2FAKKryFBBTvKcprjnE9EOpGbS8ouwaOdWg03sK0yoR%2Ffkns%2BoaEdgAmTnvtxGUfg7oxDu%2BczwP7s1ddvyTwUSdKsllN38Rpv%2Bhyb5i35iKdWHqM2pFiBGzIj29%2BCHTs%2BkDXAepj3a194nwxSceMlJUgsIhE3NtSkKkIyFPYR0FMzKapOf3zNXrv9jgS6YfKoVaigMWfFLLQM8RqyRkguT93Zoiz%2BPuJa3GC7f5JRf4EEvICNDPgmgbZY47Vj7AHRECO6S3F7G%2FEAo84r1xQU%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20170306T120558Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAI32ZWKV2CB37RBWQ%2F20170306%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=a038f0108ed73b2e42c7fa994065edb4e5cb5b4e91a2391adfd701aa349d497e"
+    url = "https://ago-item-storage.s3-external-1.amazonaws.com/a26683d2393743f4b87c89141cd1b2e8/NSPL_FEB_2017_UK.zip?X-Amz-Security-Token=FQoDYXdzEBIaDLpdiKspcWDjubK9wSK3AxFfzYs6JtI5qabwraYmAiea37h9L46vExt0pP8I6rEScy73BN66kr4RMZwBw84CBVo8CQzDqzDa%2FHoOTKdpQpPzmm6cbiGL4DPlNOdOfkvm8iWHbFXN8hEt%2Br4aOR6tDUhOGBgL1Bp%2Bz8CJFZdVyVkd6CYpIGlsrtDrecY2m%2FudjPBHe5eG%2B4bjl5OdEJyZciSok4OenkEiiuYgbpZiLM%2BMu%2FRZHy%2BKxRmMmknbhJ0JAEFu0Yu4J%2FeSWA3did54tNTITxft%2FICFmx%2FaVMuhIdFitxn85Ex%2BD%2Ft5Y7sZpw%2FP1pF0DEJ6ypQGkeryBmPohTxk7uDP0T0AKRHrqTugD7Z9eiDfL%2BdVtdYjLNnJFnDS1UMRWeDeRMeCsEwSmzmaCDGBcZzpkCiRAc4kWq5uiIrYacBndb4YC8X5DcYpNUGsMkd5ZVLuOWGo0P%2Fz2y83tvbksTz4BSdhrcBLK05jz4piJUj0Bla2FwGD%2FWv935xDaC5XUyQCYtrVI2MPGYmvOe0562UrE4XghDzqZ%2FT%2FCTW4z3KjFG2ypAdKc7GbMkfQ9PnmQXbyZRI3pS1%2FcYCFgez1W1lPnqool9XyygU%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20170705T092025Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAIOHT24LMK6KZTTSA%2F20170705%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=34a620d2994a160058830f664911f391ef75c30f7e8b1ef0a7ca33bd176c1009"
+    
     print("Creating postcode database in %s" % (pathToData+'geo.db'))
     if os.path.isfile(pathToData+'geo.db'):
         print("geo.db exists, skipping")
@@ -232,7 +235,7 @@ def setup_postcodes(pathToData):
     if os.path.exists('/tmp/psych_postcodes'):
         shutil.rmtree('/tmp/psych_postcodes')
     os.makedirs('/tmp/psych_postcodes')
-    urllib.urlretrieve(url, "/tmp/psych_postcodes/postcodes.zip")
+    urllib.request.urlretrieve(url, "/tmp/psych_postcodes/postcodes.zip")
     postcode_zipfile = "/tmp/psych_postcodes/postcodes.zip"
 
     print("Opening postcodes.zip")
