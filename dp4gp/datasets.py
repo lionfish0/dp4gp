@@ -184,22 +184,25 @@ def load_pricepaid(since=0):
     
 def load_postcode():
     """
-    Download and load UK postcode locations, from 'freepostcodes.org.uk', where
-    they've converted the large ordnance survey datafiles in to smaller csv files.
+    Download and load UK postcode locations (downloads from our S3 bucket)
     
     This takes a little while to run
     
     Returns a panda dataframe with the postcode, easting and northing
     """
     
-    unzip_data_path = "Code-Point Open/Data"
+    unzip_data_path = "Data/CSV"
     if not os.path.isfile(unzip_data_path+"/ab.csv"):
-        os.system("wget http://www.freepostcodes.org.uk/static/code-point-open/codepo_gb.zip")
+        print("Downloading codepo_gb.zip")
+        #os.system("wget http://www.freepostcodes.org.uk/static/code-point-open/codepo_gb.zip")
+        #os.system("wget https://trac.openstreetmap.org/export/20902/subversion/applications/mobile/healthwhere/createdb/codepo_gb.zip")
+        os.system("wget https://s3-eu-west-1.amazonaws.com/dp4gpdatasets/codepo_gb.zip") #hosted ourselves
+        print("Unzipping codepo_gb.zip")
         os.system("unzip codepo_gb.zip")
 
     df = pd.DataFrame()
-    for filename in os.listdir(unzip_data_path): 
-        df = df.append( pd.read_csv(unzip_data_path+"/"+filename,header=None,usecols=[0,10,11],names=["postcode","easting","northing"]) )
+    for filename in os.listdir(unzip_data_path):
+        df = df.append( pd.read_csv(unzip_data_path+"/"+filename,header=None,usecols=[0,2,3],names=["postcode","easting","northing"]) )
     return df
 
 def load_prices_and_postcode(since=0):
@@ -217,7 +220,10 @@ def add_ons_column(df,dataset):
     """
     This adds a column from the ONS dataset. It makes API queries to the census API, and so it is recommended 
     that it only be used on a reduced dataset.
+    
+    TODO The ONS API is closed, need to rewrite to access in new way
     """
+    raise NotImplementedError 
     x = df['postcode'].values.tolist()
     ons_results = get_data(x,dataset)    
     ons_df = pd.DataFrame(ons_results).drop_duplicates()
@@ -286,7 +292,7 @@ def prepare_preloaded_prices(filename, since=0, boundingbox=[-np.Inf,-np.Inf,np.
     if len(dataset)<N:
         print("Warning: Unable to provide %d prices as only %d are in current cache" % (N, len(dataset)))
     else:
-        dataset = dataset.ix[random.sample(dataset.index, N)]
+        dataset = dataset.ix[random.sample(list(dataset.index), N)]
 
     #adds column of highest qualifications
     for col in col_list:

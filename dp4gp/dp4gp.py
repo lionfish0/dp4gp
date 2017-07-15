@@ -36,7 +36,7 @@ class DPGP(object):
         return mean + noise.T, mean, cov
     
 
-    def plot(self,fixed_inputs=[],legend=False,plot_data=False, steps=None, N=10, Nattempts=1, Nits=500, extent_lower={}, extent_upper={},norm_params=None,plotGPvar=True,confidencescale=[1.0]):
+    def plot(self,fixed_inputs=[],legend=False,plot_data=False, steps=None, N=10, Nattempts=1, Nits=500, extent_lower={}, extent_upper={},norm_params=None,plotGPvar=True,confidencescale=[1.0],verbose=False):
         """
         Plot the DP predictions, etc.
         
@@ -63,7 +63,7 @@ class DPGP(object):
             steps = int(100.0**(1.0/dims)) #1d=>100 steps, 2d=>10 steps
         Xtest, free_inputs, _ = compute_Xtest(self.model.X, fixed_inputs, extent_lower=extent_lower, extent_upper=extent_upper, steps=steps)
 
-        preds, mu, cov = self.draw_prediction_samples(Xtest,N,Nattempts=1,Nits=Nits,verbose=False)
+        preds, mu, cov = self.draw_prediction_samples(Xtest,N,Nattempts=1,Nits=Nits,verbose=verbose)
         preds = dp_unnormalise(preds,norm_params)
         mu = dp_unnormalise(mu,norm_params)
         cov *= (norm_params['std']**2)
@@ -93,9 +93,13 @@ class DPGP(object):
             rgba[:,0] = 1.0
             rgba[:,3] = scalednoise
             plt.scatter(Xtest[:,free_inputs[0]],Xtest[:,free_inputs[1]],scaledpreds,color=rgba)
-
+            
             if plot_data:
                 plt.plot(self.model.X[:,free_inputs[0]],self.model.X[:,free_inputs[1]],'.k',alpha=0.2)
+
+            plt.xlim(pltlim[0][0],pltlim[1][0])
+            plt.ylim(pltlim[0][1],pltlim[1][1])
+            print(pltlim)
 
 
         if len(free_inputs)==1:

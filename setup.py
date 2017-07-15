@@ -10,5 +10,5 @@ setup(
   download_url = 'https://github.com/lionfish0/dp4gp/archive/1.01.tar.gz',
   keywords = ['differential privacy','gaussian processes'],
   classifiers = [],
-  install_requires=['GPy','numpy','sklearn','scipy'],
+  install_requires=['numpy','GPy','sklearn','scipy'],
 )
