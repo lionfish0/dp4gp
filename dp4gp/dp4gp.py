@@ -99,7 +99,10 @@ class DPGP(object):
 
             plt.xlim(pltlim[0][0],pltlim[1][0])
             plt.ylim(pltlim[0][1],pltlim[1][1])
-            print(pltlim)
+            
+            if type(self.model)==GPy.models.sparse_gp_regression.SparseGPRegression:
+                #draw the inducing points
+                plt.plot(self.model.Z.values[:,0],self.model.Z.values[:,1],'xk',mew=2,markersize=8)
 
 
         if len(free_inputs)==1:
@@ -121,7 +124,7 @@ class DPGP(object):
                 plt.plot(Xtest[:,free_inputs[0]],mu[:,0]-DPnoise*cs,'--k',lw=2,alpha=a)
                 plt.plot(Xtest[:,free_inputs[0]],mu[:,0]+DPnoise*cs,'--k',lw=2,alpha=a)            
                 a = a * 0.5
-                
+               
             plt.xlim([np.min(Xtest[:,free_inputs[0]]),np.max(Xtest[:,free_inputs[0]])])
             
             bound = np.std(self.model.X,0)*0.35
@@ -129,6 +132,16 @@ class DPGP(object):
             for finp in fixed_inputs:
                keep = (keep) & (self.model.X[:,finp[0]]>finp[1]-bound[finp[0]]) & (self.model.X[:,finp[0]]<finp[1]+bound[finp[0]])
             plt.plot(self.model.X[keep,free_inputs[0]],norm_params['mean']+self.model.Y[keep]*norm_params['std'],'k.',alpha=0.4)
+            
+            
+            if type(self.model)==GPy.models.sparse_gp_regression.SparseGPRegression:
+                #draw the inducing points
+                ax = plt.gca()
+                lower_ylim = ax.get_ylim()[0]
+                print(lower_ylim)
+                print(ax.get_ylim())
+                plt.vlines(self.model.Z.values[:,0],lower_ylim,10+lower_ylim)
+      
             
         
         
