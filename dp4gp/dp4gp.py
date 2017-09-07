@@ -102,7 +102,7 @@ class DPGP(object):
             
             if type(self.model)==GPy.models.sparse_gp_regression.SparseGPRegression:
                 #draw the inducing points
-                plt.plot(self.model.Z.values[:,0],self.model.Z.values[:,1],'xk',mew=2,markersize=8)
+                plt.plot(self.model.Z.values[:,0],self.model.Z.values[:,1],'+k',mew=2,markersize=8)
 
 
         if len(free_inputs)==1:
