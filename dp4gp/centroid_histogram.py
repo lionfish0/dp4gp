@@ -11,17 +11,16 @@ import matplotlib.pyplot as plt
 from dp4gp.utils import bin_data
 
 
-class DPGP_integral_histogram(dp4gp.DPGP):
-    """Using the histogram method"""
-    
+class DPGP_centroid_histogram(dp4gp.DPGP):
+
     def __init__(self,sens,epsilon,delta):   
         """
-        DPGP_integral_histogram(sensitivity=1.0, epsilon=1.0, delta=0.01)
+        DPGP_centroid_histogram(sensitivity=1.0, epsilon=1.0, delta=0.01)
         
         sensitivity=1.0 - the amount one output can change
         epsilon=1.0, delta=0.01 - DP parameters
         """
-        super(DPGP_integral_histogram, self).__init__(None,sens,epsilon,delta)
+        super(DPGP_centroid_histogram, self).__init__(None,sens,epsilon,delta)
 
     def prepare_model(self,Xtest,X,step,ys,variances=1.0,lengthscale=1,aggregation='mean',mechanism='laplace'):
         """
@@ -36,7 +35,7 @@ class DPGP_integral_histogram(dp4gp.DPGP):
             sens_per_bin = self.sens*np.ones_like(bincounts)
         if aggregation=='density':
             sens_per_bin = (self.sens/np.prod(step))*np.ones_like(bincounts)
-            
+
         if mechanism=='gaussian':
             c = np.sqrt(2*np.log(1.25/self.delta)) #1.25 or 2 over delta?
             bin_sigma = c*sens_per_bin/self.epsilon #noise standard deviation to add to each bin       
@@ -47,11 +46,7 @@ class DPGP_integral_histogram(dp4gp.DPGP):
             bin_sigma = np.array(sens_per_bin / self.epsilon) * np.sqrt(2)
             dp_binaverages=binaverages+np.random.laplace(scale=bin_sigma/np.sqrt(2),size=binaverages.shape)
         
-
-        #we need to build the input for the integral kernel
-        newXtest = np.zeros([Xtest.shape[0],2*Xtest.shape[1]])
-        newXtest[:,0::2] = Xtest+step
-        newXtest[:,1::2] = Xtest
+        newXtest = Xtest+np.repeat(np.array(step)[None,:],len(Xtest),0)/2 #move the X values to the centres of the bins
 
         #we don't want outputs that have no training data in.
         keep = ~np.isnan(dp_binaverages)
@@ -59,18 +54,17 @@ class DPGP_integral_histogram(dp4gp.DPGP):
         final_dp_binaverages = dp_binaverages[keep]
         bin_sigma = bin_sigma[keep]
 
-        
         #the integral kernel takes as y the integral... 
         #eg. if there's one dimension we're integrating over, km
         #then we need to give y in pound.km
         self.meanoffset = np.mean(final_dp_binaverages)
         final_dp_binaverages-= self.meanoffset
-        finalintegralbinaverages = final_dp_binaverages * np.prod(step) 
-        #final_sigma = 2.0*(bin_sigma**2) #I've no idea but optimizer will find this later... #bin_sigma[keep]
-        finalintegralsigma = bin_sigma * np.prod(step)
+        finalintegralbinaverages = final_dp_binaverages
+
+        finalintegralsigma = bin_sigma
         
         #generate the integral model
-        kernel = GPy.kern.Multidimensional_Integral_Limits(input_dim=newXtest.shape[1], variances=variances, lengthscale=lengthscale)
+        kernel = GPy.kern.RBF(input_dim=newXtest.shape[1], variance=variances, lengthscale=lengthscale)
         #we add a kernel to describe the DP noise added
         kernel = kernel + GPy.kern.WhiteHeteroscedastic(input_dim=newXtest.shape[1], num_data=len(finalintegralsigma), variance=finalintegralsigma**2)
         
@@ -78,6 +72,7 @@ class DPGP_integral_histogram(dp4gp.DPGP):
         self.model.sum.white_hetero.variance.fix() #fix the DP noise
         self.model.Gaussian_noise = 0.1 # seems to need starting at a low value!        
         return bincounts, bintotals, binaverages, sens_per_bin, bin_sigma, dp_binaverages
+    
     
     def optimize(self,messages=True):
         self.model.optimize(messages=messages)

@@ -114,3 +114,88 @@ def compute_Xtest(X,fixed_inputs=[],extent_lower={},extent_upper={},percent_extr
         Xtest[:,i] = r
         
     return Xtest, free_inputs, step
+
+def bin_data(Xtest,X,step,ys,aggregation='mean'):
+    """
+    Bin data X into equally sized bins defined by Xtest and step.
+    
+    - The data in X and ys are the locations and values of the individual data points, respectively.
+    - The Xtest vector contains the coordinates of the corners of each bin
+    - step is a vector of the step sizes.
+    
+    Returns:
+    bincounts : the number of points (from X) in each bin
+    bintotals : the sum of the values in ys for that bin
+    binaverages = bintotals/bincounts : the average value for each bin
+    aggregation specifies the binning method (either 'mean' [default], 'median', 'sum' [adds up bins], 'density' [sum of bins/bin size])
+    
+    Example: A 3x3 grid of points & four bins:
+    X = np.array([[1,1],[1,2],[1,3],[2,1],[2,2],[2,3],[3,1],[3,2],[3,3]])
+    ys = np.array([[1,1,1,1,1,1,1,1,9]]).T
+    Xtest = np.array([[0,0],[0,1.5],[1.5,0],[1.5,1.5]])
+    step = np.array([1.6,1.6])
+    counts, totals, avg = bin_data(Xtest,X,step,ys,aggregation='mean')
+    
+    would return:
+    [ 1.  2.  2.  4.]
+    [  1.   2.   2.  12.]
+    [ 1.  1.  1.  3.]
+    if aggregate='median' it would return:
+    [ 1.  1.  1.  1.]
+    """
+    bintotals = np.zeros(Xtest.shape[0])
+    bincounts = np.zeros(Xtest.shape[0])
+    if aggregation=='median':
+        binagg = [list([]) for _ in range(Xtest.shape[0])]
+
+    for i,tile in enumerate(Xtest): #loop through the tiles
+        for x,y in zip(X,ys): #loop through the data
+            intile = True
+            for tiled,xd,s in zip(tile,x,step): #loop through the dimensions of the current tile, data and step
+                if (xd<tiled) or (xd>tiled+s):
+                    intile = False
+                    break
+            if intile:
+                bintotals[i]+=y
+                bincounts[i]+=1
+                if aggregation=='median':
+                    binagg[i].append(y)
+    if aggregation=='mean':             
+        binaverages = bintotals/bincounts
+    if aggregation=='median':
+        binaverages = np.zeros(Xtest.shape[0])
+        for i, b in enumerate(binagg):
+            binaverages[i] = np.median(b)
+    if aggregation=='sum':
+        binaverages = bintotals
+    if aggregation=='density':
+        binaverages = bintotals/np.prod(step)    
+    return bincounts, bintotals, binaverages
+
+def bin_hist(data,in_ranges,out_ranges):
+    """bin_hist(data,in_ranges,out_ranges)
+    
+    data = one dimensional data
+    in_ranges = boundaries of the data
+    out_ranges = new boundaries of the data
+    Make a new histogram with new bin boundaries.
+    Assumes that the boundaries of the new bins lie on boundaries of the
+    old bins (except for the outer boundaries which can lie outside the range of the input boundaries)."""
+    
+
+    for out in out_ranges:
+        if out not in in_ranges:
+            if (out<max(in_ranges)) and (out>min(in_ranges)):
+                raise ValueError('The output range boundaries must lie on input range boundaries. %0.2f doesn\'t.' % out)
+    try:
+        bins = np.zeros(len(out_ranges)-1)
+        for i,d in zip(in_ranges,data):
+            indx = np.sum(out_ranges<=i)
+            if (indx==0):
+                raise ValueError('The values in data are outside the ranges in bin_ranges (too small) (%f)' % i)
+            if (indx>=len(out_ranges)):
+                raise ValueError('The values in data are outside the ranges in bin_ranges (too large) (%f)' % i)
+            bins[indx-1]+=d
+    except IndexError:
+        raise ValueError('The values in data are outside the ranges in bin_ranges (too large) (%f)' % i)
+    return bins

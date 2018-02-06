@@ -141,7 +141,7 @@ class DPGP(object):
                 print(lower_ylim)
                 print(ax.get_ylim())
                 plt.vlines(self.model.Z.values[:,0],lower_ylim,10+lower_ylim)
-      
+        return DPnoise      
             
         
         

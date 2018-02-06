@@ -158,12 +158,16 @@ def load_pricepaid(since=0):
     #reading the whole landregistry for 24 million records from 1995-2016 takes a lot of time, so we
     #produce a subsampled set of just 300,000 purchases, which are returned instead
     
+    print("Loading price data.")
     filename = "pp-complete.csv"
     if not os.path.isfile('sampled_pp.csv'):        
-        if not os.path.isfile(filename):        
+        if not os.path.isfile(filename):
+            print("(wgetting data from landregistry.gov.uk)")   
             os.system('wget http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/'+filename)
+        print("(reading csv file)")
         pp = pd.read_csv(filename,header=None,usecols=[1,2,3,4],names=["price", "date", "postcode", "type"])
         pp = pp.ix[random.sample(pp.index.values.tolist(), 300000)]
+        print("(saving subset to sampled_pp.csv)")
         pp.to_csv('sampled_pp.csv')
     else:
         print("Using presampled dataset.")
@@ -229,6 +233,7 @@ def add_ons_column(df,dataset):
     ons_df = pd.DataFrame(ons_results).drop_duplicates()
     return pd.merge(df,ons_df,on="postcode",how="inner")
     
+#DELETE THIS METHOD: NO LONGER USED!!!!#########################################
 def setup_postcodes(pathToData):
     """Creates databases and files, downloads data, and populates the datafiles"""       
     url = "https://ago-item-storage.s3-external-1.amazonaws.com/a26683d2393743f4b87c89141cd1b2e8/NSPL_FEB_2017_UK.zip?X-Amz-Security-Token=FQoDYXdzEBIaDLpdiKspcWDjubK9wSK3AxFfzYs6JtI5qabwraYmAiea37h9L46vExt0pP8I6rEScy73BN66kr4RMZwBw84CBVo8CQzDqzDa%2FHoOTKdpQpPzmm6cbiGL4DPlNOdOfkvm8iWHbFXN8hEt%2Br4aOR6tDUhOGBgL1Bp%2Bz8CJFZdVyVkd6CYpIGlsrtDrecY2m%2FudjPBHe5eG%2B4bjl5OdEJyZciSok4OenkEiiuYgbpZiLM%2BMu%2FRZHy%2BKxRmMmknbhJ0JAEFu0Yu4J%2FeSWA3did54tNTITxft%2FICFmx%2FaVMuhIdFitxn85Ex%2BD%2Ft5Y7sZpw%2FP1pF0DEJ6ypQGkeryBmPohTxk7uDP0T0AKRHrqTugD7Z9eiDfL%2BdVtdYjLNnJFnDS1UMRWeDeRMeCsEwSmzmaCDGBcZzpkCiRAc4kWq5uiIrYacBndb4YC8X5DcYpNUGsMkd5ZVLuOWGo0P%2Fz2y83tvbksTz4BSdhrcBLK05jz4piJUj0Bla2FwGD%2FWv935xDaC5XUyQCYtrVI2MPGYmvOe0562UrE4XghDzqZ%2FT%2FCTW4z3KjFG2ypAdKc7GbMkfQ9PnmQXbyZRI3pS1%2FcYCFgez1W1lPnqool9XyygU%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20170705T092025Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAIOHT24LMK6KZTTSA%2F20170705%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=34a620d2994a160058830f664911f391ef75c30f7e8b1ef0a7ca33bd176c1009"
@@ -273,7 +278,8 @@ def setup_postcodes(pathToData):
     conn.execute('CREATE INDEX oa11s ON geo(oa11)')
     print("Complete")
     conn.close()
-   
+################################################################################   
+
 def prepare_preloaded_prices(filename, since=0, boundingbox=[-np.Inf,-np.Inf,np.Inf,np.Inf], N=10000, col_list=['QS501EW']):
     """
     Create a csv file for a specified region bounded by the boundingbox, of N points
@@ -284,7 +290,7 @@ def prepare_preloaded_prices(filename, since=0, boundingbox=[-np.Inf,-np.Inf,np.
     London: [480e3, 130e3, 580e3, 230e3]
     """
 
-    setup_postcodes('')
+    #setup_postcodes('')
     dataset = load_prices_and_postcode(since)
 
     samp = (dataset['easting']>boundingbox[0]) & (dataset['easting']<boundingbox[2]) & (dataset['northing']>boundingbox[1]) & (dataset['northing']<boundingbox[3])
