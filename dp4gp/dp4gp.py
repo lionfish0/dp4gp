@@ -36,7 +36,7 @@ class DPGP(object):
         return mean + noise.T, mean, cov
     
 
-    def plot(self,fixed_inputs=[],legend=False,plot_data=False, steps=None, N=10, Nattempts=1, Nits=500, extent_lower={}, extent_upper={},norm_params=None,plotGPvar=True,confidencescale=[1.0],verbose=False):
+    def plot(self,fixed_inputs=[],legend=False,plot_data=False, steps=None, N=10, Nattempts=1, Nits=500, extent_lower={}, extent_upper={},norm_params=None,plotGPvar=True,confidencescale=[1.0],verbose=False,resolution=300,plot_colorbar=False):
         """
         Plot the DP predictions, etc.
         
@@ -53,6 +53,7 @@ class DPGP(object):
         (these last two parameters are passed to the draw_prediction_samples method).
         confidencescale = how wide the CI should be (default = 1 std.dev)
         norm_params = dictionary containing mean and std from dp_normalisation
+        resolution = resolution of GPy plot
         """
         
         if norm_params is None:
@@ -81,13 +82,18 @@ class DPGP(object):
         indx = 0
         if len(free_inputs)==2:
             #print(plot_data)
-            self.model.plot(plot_limits=pltlim,fixed_inputs=fixed_inputs,legend=legend,plot_data=plot_data,plot_raw=True,resolution=300)
+            self.model.plot(plot_limits=pltlim,fixed_inputs=fixed_inputs,legend=legend,plot_data=plot_data,resolution=resolution,plot_inducing=False)#plot_raw=True,
+            if plot_colorbar:
+                ax = plt.gca()
+                mappable = ax.collections[0]
+                mappable
+                plt.colorbar(mappable)
             minpred = np.min(mu)
             maxpred = np.max(mu)
             scaledpreds = (70+600*(preds[:,indx]-minpred) / (maxpred-minpred)) / np.sqrt(steps)
             scalednoise = 1-2.5*DPnoise/(maxpred-minpred) #proportion of data
             
-            #any shade implies the noise is less than 20%(?) of the total change in the signal
+            #any shade implies the noise is less than 40%(?) of the total change in the signal
             scalednoise[scalednoise<0] = 0
             rgba = np.zeros([len(scalednoise),4])
             rgba[:,0] = 1.0
@@ -348,21 +354,22 @@ class DPGP_cloaking(DPGP):
         """
         bestLogDetM = np.Inf
         bestls = None        
-        for it in range(Nattempts):
-            if verbose: print("*"),
-            import sys
-            sys.stdout.flush()
-            
-            ls = self.findLambdas_grad(cs,Nits,verbose=verbose)
-            if np.min(ls)<-0.01:
-                continue
-            M = self.calcM(ls,cs)
-            logDetM = np.log(np.linalg.det(M))
-            if logDetM<bestLogDetM:
-                bestLogDetM = logDetM
-                bestls = ls.copy()
-        if bestls is None:
-            print("Failed to find solution")
+        while bestls is None: #TODO this keeps going potentially forever!
+            for it in range(Nattempts):
+                if verbose: print("*"),
+                import sys
+                sys.stdout.flush()
+                
+                ls = self.findLambdas_grad(cs,Nits,verbose=verbose)
+                if np.min(ls)<-0.01:
+                    continue
+                M = self.calcM(ls,cs)
+                logDetM = np.log(np.linalg.det(M))
+                if logDetM<bestLogDetM:
+                    bestLogDetM = logDetM
+                    bestls = ls.copy()
+        #if bestls is None:
+        #    print("Failed to find solution")
         return bestls
     
     def calcDelta(self,ls,cs):
