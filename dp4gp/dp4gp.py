@@ -353,7 +353,8 @@ class DPGP_cloaking(DPGP):
         Call findLambdas repeatedly with different start lambdas, to avoid local minima
         """
         bestLogDetM = np.Inf
-        bestls = None        
+        bestls = None
+        count = 0      
         while bestls is None: #TODO this keeps going potentially forever!
             for it in range(Nattempts):
                 if verbose: print("*"),
@@ -364,10 +365,17 @@ class DPGP_cloaking(DPGP):
                 if np.min(ls)<-0.01:
                     continue
                 M = self.calcM(ls,cs)
-                logDetM = np.log(np.linalg.det(M))
+                detM = np.linalg.det(M)
+                if detM<=0:
+                    logDetM = -1000 #-np.inf #TODO How do we handle this?
+                else:                    
+                    logDetM = np.log(detM)
                 if logDetM<bestLogDetM:
                     bestLogDetM = logDetM
                     bestls = ls.copy()
+            count+=1
+            if count>1000:
+                raise ValueError('A value for the lambda vector cannot be computed given this cloaking matrix, cs. 1000 attempts have been made at convergence.')
         #if bestls is None:
         #    print("Failed to find solution")
         return bestls
@@ -539,3 +547,4 @@ class DPGP_inducing_cloaking(DPGP_cloaking):
         C = np.dot(np.dot(K_star, np.linalg.inv(Q)),K_NM.T) *  diag
         return C
     
+
