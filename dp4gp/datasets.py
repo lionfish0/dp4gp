@@ -166,7 +166,7 @@ def load_pricepaid(since=0):
             os.system('wget http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/'+filename)
         print("(reading csv file)")
         pp = pd.read_csv(filename,header=None,usecols=[1,2,3,4],names=["price", "date", "postcode", "type"])
-        pp = pp.ix[random.sample(pp.index.values.tolist(), 300000)]
+        ####pp = pp.ix[random.sample(pp.index.values.tolist(), 300000)]
         print("(saving subset to sampled_pp.csv)")
         pp.to_csv('sampled_pp.csv')
     else:
@@ -217,6 +217,11 @@ def load_prices_and_postcode(since=0):
     """
     pp = load_pricepaid(since)
     pc = load_postcode()
+    
+    #one database always has 7 characters (with padding) while the other has one space between parts of the postcode, this makes them the same!
+    pp['postcode'] = pp['postcode'].str.replace(' ','')
+    pc['postcode'] = pc['postcode'].str.replace(' ','')
+
     complete = pd.merge(pc,pp,on="postcode",how="inner")
     return complete
 
